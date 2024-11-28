@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  directUrl    = env("DIRECT_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  id                     String          @id @default(uuid())
+  name                   String
+  password               String
+  email                  String          @unique
+  isAdmin                Boolean         @default(false)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  userPreferenceId       String?         @unique
+  userPreference         UserPreference? @relation(fields: [userPreferenceId], references: [id])
+  createdHackathons      Hackathon[]     @relation("HackathonCreator")
+  participatedHackathons Hackathon[]     @relation("HackathonParticipant")
+  createdProjects        Project[]       @relation("ProjectCreator")
+  participatedProjects   Project[]       @relation("ProjectParticipant")
+  createdNotifications   Notification[]  @relation("NotificationSender")
+
+  @@index([email])
+}
+
+model UserPreference {
+  id      String  @id @default(uuid())
+  role    Json?
+  skills  Json?
+  avatar  String?
+  company String?
+  user    User?
+}
+
+model Hackathon {
+  id           String    @id @default(uuid())
+  name         String
+  description  String?
+  rules        String?
+  tagline      String?
+  managerEmail String?
+  location     String?
+  timeZone     String?
+  startDate    String?
+  endDate      String?
+  prizes       Json?
+  judges       String?
+  requirements String?
+  about        String?
+  partners     String?
+  resources    String?
+  launched     Boolean   @default(false)
+  company      String?
+  createdAt    DateTime? @default(now())
+  updatedAt    DateTime? @updatedAt
+  creatorId    String
+  creator      User      @relation("HackathonCreator", fields: [creatorId], references: [id])
+  participants User[]    @relation("HackathonParticipant")
+  projects     Project[]
+
+  @@index([creatorId])
+}
+
+model Project {
+  id            String    @id @default(uuid())
+  name          String
+  isSubmitted   Boolean   @default(false)
+  pitch         String?
+  story         String?
+  techStack     Json?
+  videoUrl      String?
+  repositoryUrl String?
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @updatedAt
+  creatorId     String
+  hackathonId   String
+  creator       User      @relation("ProjectCreator", fields: [creatorId], references: [id])
+  participants  User[]    @relation("ProjectParticipant")
+  hackathon     Hackathon @relation(fields: [hackathonId], references: [id])
+
+  @@index([creatorId])
+  @@index([hackathonId])
+}
+
+model Notification {
+  id            String    @id @default(uuid())
+  category      String
+  isViewed      Boolean   @default(false)
+  isAccepted    Boolean   @default(false)
+  contentId     String
+  contentName   String
+  content       String?
+  createdAt     DateTime? @default(now())
+  updatedAt     DateTime? @updatedAt
+  receiverEmail String
+  senderId      String
+  sender        User      @relation("NotificationSender", fields: [senderId], references: [id])
+
+  @@index([senderId])
+}
+
+model HackathonParticipant {
+  A String
+  B String
+
+  @@unique([A, B], map: "_HackathonParticipant_AB_unique")
+  @@index([B], map: "_HackathonParticipant_B_index")
+  @@map("_HackathonParticipant")
+}
+
+model ProjectParticipant {
+  A String
+  B String
+
+  @@unique([A, B], map: "_ProjectParticipant_AB_unique")
+  @@index([B], map: "_ProjectParticipant_B_index")
+  @@map("_ProjectParticipant")
+}
